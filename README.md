@@ -7,6 +7,46 @@ Our FPGA prototyping efforts have so far resulted in a prototype for Xilinx VC70
 
 Some of the hardware modules in RIDECORE are based on vscale (<https://github.com/ucb-bar/vscale>).
 
+# RV32I Conformance Status
+
+RIDECORE is **not a conforming implementation of the RV32I base integer ISA**.
+This comparison uses ratified RV32I version 2.1 from the RISC-V unprivileged
+instruction-set specification. RIDECORE implements a reduced RV32I-style
+instruction set together with part of the M integer multiplication extension;
+the repository does not declare a supported RISC-V ISA version.
+
+The current implementation differs from RV32I in the following ways:
+
+* **Loads and stores are word-only.** `LW` and `SW` are implemented, but the
+  RV32I `LB`, `LH`, `LBU`, and `LHU` loads and `SB` and `SH` stores are not.
+  The decoder may accept these encodings, but the execution and memory paths do
+  not perform the required width conversion or sign extension.
+* **`FENCE` is missing.** The RV32I `MISC-MEM` instruction is not implemented.
+* **`ECALL` and `EBREAK` are missing.** RV32I `SYSTEM` instructions are not
+  implemented.
+* **There is no architectural trap or exception mechanism.** Illegal and
+  reserved encodings do not raise an illegal-instruction exception. The
+  decoder produces an `illegal_instruction` signal, but it is not consumed by
+  the pipeline.
+* **Instruction-address alignment exceptions are missing.** `JAL`, `JALR`, and
+  taken conditional branches do not raise the required
+  instruction-address-misaligned exception when a target is not four-byte
+  aligned. The `JALR` target and link arithmetic itself follows RV32I:
+  `(rs1 + sext(imm)) & ~1`, and `rd` receives `pc + 4`.
+* **Misaligned data accesses are not trapped or fully supported.** Software
+  must use naturally aligned 32-bit accesses.
+* **The M extension is incomplete.** `MUL`, `MULH`, `MULHSU`, and `MULHU` are
+  implemented, but `DIV`, `DIVU`, `REM`, and `REMU` are not.
+
+The CSR, counter, and `FENCE.I` facilities are also absent. In ratified RV32I
+2.1 these are separate `Zicsr`, `Zicntr`, and `Zifencei` extensions rather than
+part of the base-I instruction set, but their absence means RIDECORE does not
+provide a general-purpose RISC-V execution environment.
+
+Consequently, programs must be compiled and written for this specific subset.
+They must not depend on subword memory operations, trap handling, misaligned
+accesses, machine-mode CSRs, or the division portion of the M extension.
+
 # Toolchain Installation (Linux)  
 
 * riscv-tools  
