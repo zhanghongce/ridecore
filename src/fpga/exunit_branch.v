@@ -40,7 +40,8 @@ module exunit_branch
    assign prsuccess = busy & addrmatch;
    assign prmiss = busy & ~addrmatch;
    assign jmpaddr = brcond ? jmpaddr_taken : (pc + 4);
-   assign jmpaddr_taken = (((opcode == `RV32_JALR) ? ex_src1 : pc) + imm);
+   assign jmpaddr_taken = (opcode == `RV32_JALR) ?
+			  ((ex_src1 + imm) & 32'hFFFF_FFFE) : (pc + imm);
    
    assign brcond = ((opcode == `RV32_JAL) || (opcode == `RV32_JALR)) ?
 			       1'b1 : comprslt[0];
